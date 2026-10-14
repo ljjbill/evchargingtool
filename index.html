@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>EV Charging Schedule Tool</title>
   <style>
     body {
@@ -80,15 +82,24 @@
       font-size: 0.95rem;
       color: #333;
     }
-    .result-row:last-child {
-      margin-bottom: 0;
+    .result-row.primary {
       padding-top: 6px;
       border-top: 1px dashed #bfe3c2;
+    }
+    .result-row.alert {
+      margin-bottom: 0;
+      padding-top: 6px;
+      border-top: 1px dashed #f5c6cb;
     }
     .highlight {
       font-weight: 700;
       font-size: 1.25rem;
       color: #1e7e34;
+    }
+    .highlight-alert {
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: #c82333;
     }
   </style>
 </head>
@@ -99,8 +110,8 @@
 
   <label>Calculation Mode</label>
   <div class="btn-group">
-    <button type="button" class="toggle-btn active" id="mode-departure" onclick="setMode('departure')">Set Departure Time</button>
-    <button type="button" class="toggle-btn" id="mode-now" onclick="setMode('now')">Start Charging Now</button>
+    <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure Time</button>
+    <button type="button" class="toggle-btn active" id="mode-now" onclick="setMode('now')">Start Charging Now</button>
   </div>
 
   <label for="current">Current Battery (%)</label>
@@ -115,7 +126,7 @@
     <button type="button" class="toggle-btn" id="rate-10" onclick="setRate(10)">10% / hr</button>
   </div>
 
-  <div id="departure-group">
+  <div id="departure-group" style="display: none;">
     <label for="leave">Departure Time</label>
     <input type="time" id="leave" value="17:00">
   </div>
@@ -129,16 +140,21 @@
       <span>Duration:</span>
       <span id="duration" class="highlight">3h 0m</span>
     </div>
-    <div class="result-row">
-      <span id="time-label">Start Charging At:</span>
-      <span id="target-time" class="highlight">2:00 PM</span>
+    <div class="result-row primary">
+      <span id="time-label">Done Charging At:</span>
+      <span id="target-time" class="highlight">--</span>
+    </div>
+    <div class="result-row alert" id="must-leave-row">
+      <span>Must Leave By (+45m):</span>
+      <span id="must-leave-time" class="highlight-alert">--</span>
     </div>
   </div>
 </div>
 
 <script>
-  let mode = 'departure'; // 'departure' or 'now'
-  let selectedRate = 8;   // 8 or 10
+  let mode = 'now';     // Default to workplace charging starting now
+  let selectedRate = 8; // 8% or 10%
+  const GRACE_PERIOD_MINS = 45;
 
   // Populate target dropdown: 20% to 90% in 5% steps
   const targetSelect = document.getElementById('target');
@@ -155,6 +171,7 @@
     document.getElementById('mode-departure').classList.toggle('active', mode === 'departure');
     document.getElementById('mode-now').classList.toggle('active', mode === 'now');
     document.getElementById('departure-group').style.display = mode === 'departure' ? 'block' : 'none';
+    document.getElementById('must-leave-row').style.display = mode === 'now' ? 'flex' : 'none';
     document.getElementById('time-label').textContent = mode === 'departure' ? 'Start Charging At:' : 'Done Charging At:';
     calculate();
   }
@@ -184,6 +201,7 @@
       document.getElementById('gain').textContent = '0%';
       document.getElementById('duration').textContent = '0 min';
       document.getElementById('target-time').textContent = 'Already at target';
+      document.getElementById('must-leave-time').textContent = 'Now';
       return;
     }
 
@@ -205,15 +223,19 @@
 
         const startH24 = Math.floor(startTotalMins / 60);
         const startM = startTotalMins % 60;
-        const tempDate = new Date();
-        tempDate.setHours(startH24, startM, 0);
+        const startDate = new Date();
+        startDate.setHours(startH24, startM, 0);
 
-        document.getElementById('target-time').textContent = formatTime(tempDate);
+        document.getElementById('target-time').textContent = formatTime(startDate);
       }
     } else {
-      // Start charging now -> calculate completion time
-      const finishDate = new Date(Date.now() + totalMinutes * 60 * 1000);
-      document.getElementById('target-time').textContent = formatTime(finishDate);
+      // Start charging now
+      const nowMs = Date.now();
+      const doneDate = new Date(nowMs + totalMinutes * 60 * 1000);
+      const mustLeaveDate = new Date(doneDate.getTime() + GRACE_PERIOD_MINS * 60 * 1000);
+
+      document.getElementById('target-time').textContent = formatTime(doneDate);
+      document.getElementById('must-leave-time').textContent = formatTime(mustLeaveDate);
     }
   }
 
