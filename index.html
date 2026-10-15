@@ -129,20 +129,17 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     }
 
-    /* Green highlight for Charging Location */
     #loc-work.active, #loc-home.active {
       border-color: rgba(0, 230, 118, 0.4);
       color: var(--accent-green);
       box-shadow: 0 0 14px var(--accent-green-glow);
     }
 
-    /* Calculation mode active state */
     #mode-now.active, #mode-departure.active {
       border-color: rgba(255, 255, 255, 0.15);
       color: #ffffff;
     }
 
-    /* Slider Container */
     .slider-card {
       background: var(--input-bg);
       border: 1px solid var(--card-border);
@@ -221,7 +218,6 @@
       cursor: pointer;
     }
 
-    /* Results */
     .result-box {
       margin-top: 26px;
       background: #101216;
@@ -284,7 +280,7 @@
 <body>
 
 <div class="card">
-  <!-- Brand Header with Green Accent -->
+  <!-- Brand Header -->
   <div class="header">
     <div class="header-title">
       <svg class="ev-icon" viewBox="0 0 24 24">
@@ -294,7 +290,7 @@
     </div>
   </div>
 
-  <!-- Charging Location (Green Highlighting) -->
+  <!-- Charging Location -->
   <label>Charging Location</label>
   <div class="btn-group">
     <button type="button" class="toggle-btn active" id="loc-work" onclick="setLocation('work')">Work (8%/hr)</button>
@@ -308,29 +304,29 @@
     <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure</button>
   </div>
 
-  <!-- Current Battery Slider -->
+  <!-- Current Battery Slider (Default: 50%) -->
   <div style="margin-top: 18px;">
     <div class="slider-card">
       <div class="slider-header">
         <span class="slider-title">Current Battery</span>
-        <span class="slider-val" id="current-val">61%</span>
+        <span class="slider-val" id="current-val">50%</span>
       </div>
-      <input type="range" id="current" value="61" min="0" max="100" step="1" oninput="onCurrentChange(this.value)">
+      <input type="range" id="current" value="50" min="0" max="100" step="1" oninput="onCurrentChange(this.value)">
     </div>
   </div>
 
-  <!-- Target Battery Slider (Stepped by 5%, Range 20%–90%) -->
+  <!-- Target Battery Slider (Default: 80%) -->
   <div style="margin-top: 12px;">
     <div class="slider-card">
       <div class="slider-header">
         <span class="slider-title">Target Battery</span>
-        <span class="slider-val" id="target-val">85%</span>
+        <span class="slider-val" id="target-val">80%</span>
       </div>
-      <input type="range" id="target" value="85" min="20" max="90" step="5" oninput="onTargetChange(this.value)">
+      <input type="range" id="target" value="80" min="20" max="90" step="5" oninput="onTargetChange(this.value)">
     </div>
   </div>
 
-  <!-- Departure Picker (Hidden when Start Now is active) -->
+  <!-- Departure Picker -->
   <div id="departure-group" style="display: none; margin-top: 12px;">
     <label for="leave" style="margin-top: 6px;">Departure Time</label>
     <div class="time-picker-box">
