@@ -4,166 +4,396 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>EV Charging Schedule Tool</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>EV SCHEDULE TOOL</title>
   <style>
+    :root {
+      --bg-dark: #0d0f12;
+      --card-bg: #16191d;
+      --card-border: #262a30;
+      --accent-green: #00e676;
+      --accent-green-glow: rgba(0, 230, 118, 0.25);
+      --accent-red: #ff334b;
+      --accent-red-glow: rgba(255, 51, 75, 0.25);
+      --text-main: #f5f5f7;
+      --text-muted: #8b929a;
+      --input-bg: #1f2329;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-dark);
+      background-image: radial-gradient(circle at 50% 12%, #1a222d 0%, var(--bg-dark) 75%);
+      color: var(--text-main);
       display: flex;
       justify-content: center;
-      padding: 30px 16px;
+      align-items: center;
+      min-height: 100vh;
       margin: 0;
-    }
-    .card {
-      background: #ffffff;
-      padding: 24px;
-      border-radius: 14px;
-      max-width: 440px;
-      width: 100%;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      padding: 20px 16px;
       box-sizing: border-box;
     }
-    h2 {
-      margin: 0 0 18px;
-      font-size: 1.35rem;
-      color: #111;
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      max-width: 420px;
+      width: 100%;
+      padding: 28px 22px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
     }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 10%;
+      width: 80%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+      opacity: 0.85;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.15rem;
+      letter-spacing: 0.12em;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+
+    .header-title span {
+      color: var(--accent-green);
+      text-shadow: 0 0 10px var(--accent-green-glow);
+    }
+
+    .ev-icon {
+      width: 22px;
+      height: 22px;
+      fill: var(--accent-green);
+      filter: drop-shadow(0 0 6px var(--accent-green-glow));
+    }
+
     label {
       display: block;
-      font-weight: 600;
-      margin: 14px 0 6px;
-      font-size: 0.9rem;
-      color: #333;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin: 20px 0 8px 2px;
     }
-    input[type="number"], input[type="time"], select {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      box-sizing: border-box;
-      background: #fff;
-    }
+
     .btn-group {
       display: flex;
-      gap: 10px;
-      margin-top: 4px;
+      gap: 8px;
+      background: #111317;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
     }
+
     .toggle-btn {
       flex: 1;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9px;
       padding: 10px 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      background: #fff;
-      color: #444;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .toggle-btn.active {
-      border-color: #007aff;
-      background: #007aff;
-      color: #fff;
+      background: var(--input-bg);
+      color: var(--text-main);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     }
-    .result-box {
-      margin-top: 22px;
-      padding: 16px;
-      background: #f0f8f1;
-      border: 1px solid #bfe3c2;
-      border-radius: 10px;
+
+    /* Green highlight for Charging Location */
+    #loc-work.active, #loc-home.active {
+      border-color: rgba(0, 230, 118, 0.4);
+      color: var(--accent-green);
+      box-shadow: 0 0 14px var(--accent-green-glow);
     }
-    .result-row {
+
+    /* Calculation mode active state */
+    #mode-now.active, #mode-departure.active {
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+    }
+
+    /* Slider Container */
+    .slider-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-      color: #333;
     }
-    .result-row.primary {
-      padding-top: 6px;
-      border-top: 1px dashed #bfe3c2;
-    }
-    .result-row.alert {
-      margin-bottom: 0;
-      padding-top: 6px;
-      border-top: 1px dashed #f5c6cb;
-    }
-    .highlight {
+
+    .slider-title {
+      font-size: 0.78rem;
       font-weight: 700;
-      font-size: 1.25rem;
-      color: #1e7e34;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
     }
-    .highlight-alert {
+
+    .slider-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent-green);
+      text-shadow: 0 0 10px var(--accent-green-glow);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #111417;
+      outline: none;
+      margin: 4px 0;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      cursor: pointer;
+      box-shadow: 0 0 12px var(--accent-green-glow), 0 2px 6px rgba(0,0,0,0.6);
+      border: 2px solid #ffffff;
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.15);
+    }
+
+    .time-picker-box {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+
+    .time-picker-box input[type="time"] {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.15rem;
       font-weight: 700;
+      width: 100%;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Results */
+    .result-box {
+      margin-top: 26px;
+      background: #101216;
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .result-row:first-child { padding-top: 0; }
+    .result-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .result-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .val-large {
       font-size: 1.25rem;
-      color: #c82333;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .val-highlight-green {
+      color: var(--accent-green);
+      font-weight: 800;
+      font-size: 1.3rem;
+      text-shadow: 0 0 10px var(--accent-green-glow);
+    }
+
+    .val-highlight-red {
+      color: var(--accent-red);
+      font-weight: 800;
+      font-size: 1.3rem;
+      text-shadow: 0 0 10px var(--accent-red-glow);
+    }
+
+    .badge-cap {
+      background: rgba(255, 179, 0, 0.15);
+      color: #ffb300;
+      border: 1px solid rgba(255, 179, 0, 0.35);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 6px;
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>EV Charging Schedule Tool</h2>
+  <!-- Brand Header with Green Accent -->
+  <div class="header">
+    <div class="header-title">
+      <svg class="ev-icon" viewBox="0 0 24 24">
+        <path d="M7 2v11h3v9l7-12h-4l4-8H7z"/>
+      </svg>
+      EV <span>SCHEDULE TOOL</span>
+    </div>
+  </div>
 
+  <!-- Charging Location (Green Highlighting) -->
+  <label>Charging Location</label>
+  <div class="btn-group">
+    <button type="button" class="toggle-btn active" id="loc-work" onclick="setLocation('work')">Work (8%/hr)</button>
+    <button type="button" class="toggle-btn" id="loc-home" onclick="setLocation('home')">Home (10%/hr)</button>
+  </div>
+
+  <!-- Calculation Mode -->
   <label>Calculation Mode</label>
   <div class="btn-group">
-    <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure Time</button>
-    <button type="button" class="toggle-btn active" id="mode-now" onclick="setMode('now')">Start Charging Now</button>
+    <button type="button" class="toggle-btn active" id="mode-now" onclick="setMode('now')">Start Now</button>
+    <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure</button>
   </div>
 
-  <label for="current">Current Battery (%)</label>
-  <input type="number" id="current" value="61" min="0" max="100">
-
-  <label for="target">Target Battery (%)</label>
-  <select id="target"></select>
-
-  <label>Charging Rate</label>
-  <div class="btn-group">
-    <button type="button" class="toggle-btn active" id="rate-8" onclick="setRate(8)">8% / hr</button>
-    <button type="button" class="toggle-btn" id="rate-10" onclick="setRate(10)">10% / hr</button>
+  <!-- Current Battery Slider -->
+  <div style="margin-top: 18px;">
+    <div class="slider-card">
+      <div class="slider-header">
+        <span class="slider-title">Current Battery</span>
+        <span class="slider-val" id="current-val">61%</span>
+      </div>
+      <input type="range" id="current" value="61" min="0" max="100" step="1" oninput="onCurrentChange(this.value)">
+    </div>
   </div>
 
-  <div id="departure-group" style="display: none;">
-    <label for="leave">Departure Time</label>
-    <input type="time" id="leave" value="17:00">
+  <!-- Target Battery Slider (Stepped by 5%, Range 20%–90%) -->
+  <div style="margin-top: 12px;">
+    <div class="slider-card">
+      <div class="slider-header">
+        <span class="slider-title">Target Battery</span>
+        <span class="slider-val" id="target-val">85%</span>
+      </div>
+      <input type="range" id="target" value="85" min="20" max="90" step="5" oninput="onTargetChange(this.value)">
+    </div>
   </div>
 
+  <!-- Departure Picker (Hidden when Start Now is active) -->
+  <div id="departure-group" style="display: none; margin-top: 12px;">
+    <label for="leave" style="margin-top: 6px;">Departure Time</label>
+    <div class="time-picker-box">
+      <input type="time" id="leave" value="17:00" onchange="calculate()">
+    </div>
+  </div>
+
+  <!-- Results Section -->
   <div class="result-box">
     <div class="result-row">
-      <span>Gain Needed:</span>
-      <span id="gain" class="highlight">24%</span>
+      <div class="result-label">Gain / Target:</div>
+      <div class="val-large" id="gain">--</div>
     </div>
     <div class="result-row">
-      <span>Duration:</span>
-      <span id="duration" class="highlight">3h 0m</span>
+      <div class="result-label">Session Duration:</div>
+      <div class="val-large" id="duration">--</div>
     </div>
-    <div class="result-row primary">
-      <span id="time-label">Done Charging At:</span>
-      <span id="target-time" class="highlight">--</span>
+
+    <!-- Start Now Results -->
+    <div id="now-results">
+      <div class="result-row">
+        <div class="result-label">Done Charging At:</div>
+        <div class="val-highlight-green" id="target-time">--</div>
+      </div>
+      <div class="result-row" id="must-leave-row">
+        <div class="result-label">Must Leave By (+45m):</div>
+        <div class="val-highlight-red" id="must-leave-time">--</div>
+      </div>
     </div>
-    <div class="result-row alert" id="must-leave-row">
-      <span>Must Leave By (+45m):</span>
-      <span id="must-leave-time" class="highlight-alert">--</span>
+
+    <!-- Set Departure Results -->
+    <div id="departure-results" style="display: none;">
+      <div id="work-departure-block">
+        <div class="result-row">
+          <div class="result-label">Earliest Start (45m Grace):</div>
+          <div class="val-highlight-green" id="earliest-start-time">--</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Latest Start (Exact Finish):</div>
+          <div class="val-highlight-red" id="latest-start-time">--</div>
+        </div>
+      </div>
+      <div id="home-departure-block" style="display: none;">
+        <div class="result-row">
+          <div class="result-label">Start Charging At:</div>
+          <div class="val-highlight-green" id="home-start-time">--</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  let mode = 'now';     // Default to workplace charging starting now
-  let selectedRate = 8; // 8% or 10%
-  const GRACE_PERIOD_MINS = 45;
+  let locationType = 'work';
+  let mode = 'now';
+  const MAX_WORK_HOURS = 4;
+  const WORK_GRACE_MINS = 45;
 
-  // Populate target dropdown: 20% to 90% in 5% steps
-  const targetSelect = document.getElementById('target');
-  for (let pct = 20; pct <= 90; pct += 5) {
-    const opt = document.createElement('option');
-    opt.value = pct;
-    opt.textContent = `${pct}%`;
-    if (pct === 85) opt.selected = true;
-    targetSelect.appendChild(opt);
+  function setLocation(loc) {
+    locationType = loc;
+    document.getElementById('loc-work').classList.toggle('active', loc === 'work');
+    document.getElementById('loc-home').classList.toggle('active', loc === 'home');
+    calculate();
   }
 
   function setMode(newMode) {
@@ -171,15 +401,16 @@
     document.getElementById('mode-departure').classList.toggle('active', mode === 'departure');
     document.getElementById('mode-now').classList.toggle('active', mode === 'now');
     document.getElementById('departure-group').style.display = mode === 'departure' ? 'block' : 'none';
-    document.getElementById('must-leave-row').style.display = mode === 'now' ? 'flex' : 'none';
-    document.getElementById('time-label').textContent = mode === 'departure' ? 'Start Charging At:' : 'Done Charging At:';
     calculate();
   }
 
-  function setRate(rate) {
-    selectedRate = rate;
-    document.getElementById('rate-8').classList.toggle('active', rate === 8);
-    document.getElementById('rate-10').classList.toggle('active', rate === 10);
+  function onCurrentChange(val) {
+    document.getElementById('current-val').textContent = `${val}%`;
+    calculate();
+  }
+
+  function onTargetChange(val) {
+    document.getElementById('target-val').textContent = `${val}%`;
     calculate();
   }
 
@@ -197,51 +428,80 @@
     const target = parseFloat(document.getElementById('target').value) || 0;
     const leaveVal = document.getElementById('leave').value;
 
+    const isWork = locationType === 'work';
+    const rate = isWork ? 8 : 10;
+
+    document.getElementById('must-leave-row').style.display = isWork ? 'flex' : 'none';
+    document.getElementById('now-results').style.display = mode === 'now' ? 'block' : 'none';
+    document.getElementById('departure-results').style.display = mode === 'departure' ? 'block' : 'none';
+    document.getElementById('work-departure-block').style.display = (mode === 'departure' && isWork) ? 'block' : 'none';
+    document.getElementById('home-departure-block').style.display = (mode === 'departure' && !isWork) ? 'block' : 'none';
+
     if (target <= current) {
       document.getElementById('gain').textContent = '0%';
       document.getElementById('duration').textContent = '0 min';
-      document.getElementById('target-time').textContent = 'Already at target';
+      document.getElementById('target-time').textContent = 'At target';
       document.getElementById('must-leave-time').textContent = 'Now';
+      document.getElementById('earliest-start-time').textContent = 'N/A';
+      document.getElementById('latest-start-time').textContent = 'N/A';
+      document.getElementById('home-start-time').textContent = 'At target';
       return;
     }
 
     const neededPercent = target - current;
-    const totalMinutes = Math.round((neededPercent / selectedRate) * 60);
+    const rawHours = neededPercent / rate;
+    const isCapped = isWork && (rawHours > MAX_WORK_HOURS);
+    const effectiveHours = isCapped ? MAX_WORK_HOURS : rawHours;
+    const totalMinutes = Math.round(effectiveHours * 60);
 
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
 
-    document.getElementById('gain').textContent = `${neededPercent}%`;
-    document.getElementById('duration').textContent = `${hours}h ${mins}m`;
-
-    if (mode === 'departure') {
-      if (leaveVal) {
-        const [leaveH, leaveM] = leaveVal.split(':').map(Number);
-        let leaveTotalMins = leaveH * 60 + leaveM;
-        let startTotalMins = (leaveTotalMins - totalMinutes) % 1440;
-        if (startTotalMins < 0) startTotalMins += 1440;
-
-        const startH24 = Math.floor(startTotalMins / 60);
-        const startM = startTotalMins % 60;
-        const startDate = new Date();
-        startDate.setHours(startH24, startM, 0);
-
-        document.getElementById('target-time').textContent = formatTime(startDate);
-      }
+    if (isCapped) {
+      const maxGain = MAX_WORK_HOURS * rate;
+      const expectedSoc = Math.min(100, current + maxGain);
+      document.getElementById('gain').innerHTML = `+${maxGain}% <span style="font-size:0.8rem;color:var(--text-muted);">(to ${expectedSoc}%)</span>`;
+      document.getElementById('duration').innerHTML = `4h 0m <span class="badge-cap">4h Cap</span>`;
     } else {
-      // Start charging now
+      document.getElementById('gain').textContent = `+${neededPercent}%`;
+      document.getElementById('duration').textContent = `${hours}h ${mins}m`;
+    }
+
+    if (mode === 'now') {
       const nowMs = Date.now();
       const doneDate = new Date(nowMs + totalMinutes * 60 * 1000);
-      const mustLeaveDate = new Date(doneDate.getTime() + GRACE_PERIOD_MINS * 60 * 1000);
-
       document.getElementById('target-time').textContent = formatTime(doneDate);
-      document.getElementById('must-leave-time').textContent = formatTime(mustLeaveDate);
+
+      if (isWork) {
+        const mustLeaveDate = new Date(doneDate.getTime() + WORK_GRACE_MINS * 60 * 1000);
+        document.getElementById('must-leave-time').textContent = formatTime(mustLeaveDate);
+      }
+    } else {
+      if (leaveVal) {
+        const [leaveH, leaveM] = leaveVal.split(':').map(Number);
+        const leaveTotalMins = leaveH * 60 + leaveM;
+
+        let latestMins = (leaveTotalMins - totalMinutes) % 1440;
+        if (latestMins < 0) latestMins += 1440;
+
+        const makeDate = (mins) => {
+          const d = new Date();
+          d.setHours(Math.floor(mins / 60), mins % 60, 0);
+          return d;
+        };
+
+        if (isWork) {
+          let earliestMins = (leaveTotalMins - totalMinutes - WORK_GRACE_MINS) % 1440;
+          if (earliestMins < 0) earliestMins += 1440;
+
+          document.getElementById('earliest-start-time').textContent = formatTime(makeDate(earliestMins));
+          document.getElementById('latest-start-time').textContent = formatTime(makeDate(latestMins));
+        } else {
+          document.getElementById('home-start-time').textContent = formatTime(makeDate(latestMins));
+        }
+      }
     }
   }
-
-  ['current', 'target', 'leave'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calculate);
-  });
 
   calculate();
 </script>
