@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>EV SCHEDULE TOOL</title>
+  <title>EV SCHEDULE & SAVINGS TOOL</title>
   <style>
     :root {
       --bg-dark: #0d0f12;
@@ -18,6 +18,12 @@
       --text-main: #f5f5f7;
       --text-muted: #8b929a;
       --input-bg: #1f2329;
+      --gas-grey: #7c7c80;
+      --tick-inactive: #262a30;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
@@ -31,18 +37,17 @@
       min-height: 100vh;
       margin: 0;
       padding: 20px 16px;
-      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
     }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 24px;
-      max-width: 420px;
+      max-width: 440px;
       width: 100%;
       padding: 28px 22px;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-      box-sizing: border-box;
       position: relative;
       overflow: hidden;
     }
@@ -62,7 +67,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 18px;
     }
 
     .header-title {
@@ -79,6 +84,7 @@
     .header-title span {
       color: var(--accent-green);
       text-shadow: 0 0 10px var(--accent-green-glow);
+      transition: opacity 0.25s ease;
     }
 
     .ev-icon {
@@ -88,6 +94,84 @@
       filter: drop-shadow(0 0 6px var(--accent-green-glow));
     }
 
+    /* Animated Main Tab Navigation */
+    .tab-nav {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #101216;
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 22px;
+    }
+
+    .tab-indicator {
+      position: absolute;
+      top: 5px;
+      bottom: 5px;
+      left: 5px;
+      width: calc(50% - 5px);
+      background: var(--input-bg);
+      border: 1px solid rgba(0, 230, 118, 0.35);
+      border-radius: 10px;
+      box-shadow: 0 0 14px var(--accent-green-glow);
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .tab-nav.savings-active .tab-indicator {
+      transform: translateX(100%);
+    }
+
+    .tab-btn {
+      position: relative;
+      z-index: 2;
+      background: transparent;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-green);
+    }
+
+    /* Smooth Tab Content Transitions */
+    .tabs-viewport {
+      display: grid;
+      grid-template-columns: 1fr;
+      position: relative;
+    }
+
+    .tab-pane {
+      grid-row: 1;
+      grid-column: 1;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(10px) scale(0.985);
+      transition: opacity 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                  visibility 0.32s;
+    }
+
+    .tab-pane.active {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Shared Form Controls */
     label {
       display: block;
       font-size: 0.75rem;
@@ -95,49 +179,87 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin: 20px 0 8px 2px;
+      margin: 18px 0 8px 2px;
     }
 
+    /* Sliding Pill Button Groups (Location & Mode) */
     .btn-group {
-      display: flex;
-      gap: 8px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       background: #111317;
       padding: 4px;
       border-radius: 12px;
       border: 1px solid var(--card-border);
     }
 
+    .group-indicator {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc(50% - 4px);
+      background: var(--input-bg);
+      border-radius: 9px;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .group-indicator.green-pill {
+      border: 1px solid rgba(0, 230, 118, 0.4);
+      box-shadow: 0 0 14px var(--accent-green-glow);
+    }
+
+    .group-indicator.neutral-pill {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .btn-group.right-active .group-indicator {
+      transform: translateX(100%);
+    }
+
     .toggle-btn {
-      flex: 1;
+      position: relative;
+      z-index: 2;
       background: transparent;
-      border: 1px solid transparent;
+      border: none;
       border-radius: 9px;
       padding: 10px 8px;
       font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-muted);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: color 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .toggle-btn.active {
-      background: var(--input-bg);
-      color: var(--text-main);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
-    }
-
     #loc-work.active, #loc-home.active {
-      border-color: rgba(0, 230, 118, 0.4);
       color: var(--accent-green);
-      box-shadow: 0 0 14px var(--accent-green-glow);
     }
 
     #mode-now.active, #mode-departure.active {
-      border-color: rgba(255, 255, 255, 0.15);
       color: #ffffff;
+    }
+
+    /* Smooth Expand/Collapse for Departure Time */
+    .collapsible {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+      transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity 0.3s ease,
+                  margin-top 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .collapsible.open {
+      max-height: 110px;
+      opacity: 1;
+      margin-top: 12px;
     }
 
     .slider-card {
@@ -219,7 +341,7 @@
     }
 
     .result-box {
-      margin-top: 26px;
+      margin-top: 24px;
       background: #101216;
       border: 1px solid var(--card-border);
       border-radius: 18px;
@@ -244,23 +366,26 @@
     }
 
     .val-large {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 800;
       color: var(--text-main);
+      font-variant-numeric: tabular-nums;
     }
 
     .val-highlight-green {
       color: var(--accent-green);
       font-weight: 800;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       text-shadow: 0 0 10px var(--accent-green-glow);
+      font-variant-numeric: tabular-nums;
     }
 
     .val-highlight-red {
       color: var(--accent-red);
       font-weight: 800;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       text-shadow: 0 0 10px var(--accent-red-glow);
+      font-variant-numeric: tabular-nums;
     }
 
     .badge-cap {
@@ -275,111 +400,366 @@
       text-transform: uppercase;
       margin-left: 6px;
     }
+
+    /* --- COST SAVINGS TAB STYLES --- */
+    .tesla-stats-card {
+      background: #101216;
+      padding: 20px 18px;
+      border-radius: 18px;
+      margin-bottom: 20px;
+      border: 1px solid var(--card-border);
+    }
+
+    .stats-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 2.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bars-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tick-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 20px;
+    }
+
+    .tick {
+      width: 3.5px;
+      height: 100%;
+      border-radius: 2px;
+      background-color: var(--tick-inactive);
+      transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .tick.active-green {
+      background-color: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green-glow);
+    }
+
+    .tick.active-danger {
+      background-color: var(--accent-red);
+      box-shadow: 0 0 6px var(--accent-red-glow);
+    }
+
+    .tick.active-grey {
+      background-color: var(--gas-grey);
+    }
+
+    .stats-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot.green {
+      background-color: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green-glow);
+    }
+
+    .dot.grey {
+      background-color: var(--gas-grey);
+    }
+
+    .legend-amount {
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-left: 2px;
+    }
+
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .input-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-box.full-width {
+      grid-column: span 2;
+    }
+
+    .input-box label {
+      margin: 0 0 6px 2px;
+      font-size: 0.72rem;
+    }
+
+    .num-input {
+      width: 100%;
+      padding: 11px 12px;
+      background-color: var(--input-bg);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .num-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green-glow);
+    }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <!-- Brand Header -->
+  <!-- Brand Header[span_0](start_span)[span_0](end_span) -->
   <div class="header">
     <div class="header-title">
       <svg class="ev-icon" viewBox="0 0 24 24">
         <path d="M7 2v11h3v9l7-12h-4l4-8H7z"/>
       </svg>
-      EV <span>SCHEDULE TOOL</span>
+      EV <span id="header-accent">SCHEDULE TOOL</span>
     </div>
   </div>
 
-  <!-- Charging Location -->
-  <label>Charging Location</label>
-  <div class="btn-group">
-    <button type="button" class="toggle-btn active" id="loc-work" onclick="setLocation('work')">Work (8%/hr)</button>
-    <button type="button" class="toggle-btn" id="loc-home" onclick="setLocation('home')">Home (10%/hr)</button>
+  <!-- Tab Navigation with Sliding Pill Indicator -->
+  <div class="tab-nav" id="tab-nav">
+    <div class="tab-indicator"></div>
+    <button type="button" class="tab-btn active" id="tab-btn-schedule" onclick="switchTab('schedule')">Charging Schedule</button>
+    <button type="button" class="tab-btn" id="tab-btn-savings" onclick="switchTab('savings')">Cost Savings</button>
   </div>
 
-  <!-- Calculation Mode -->
-  <label>Calculation Mode</label>
-  <div class="btn-group">
-    <button type="button" class="toggle-btn active" id="mode-now" onclick="setMode('now')">Start Now</button>
-    <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure</button>
-  </div>
-
-  <!-- Current Battery Slider (Default: 50%) -->
-  <div style="margin-top: 18px;">
-    <div class="slider-card">
-      <div class="slider-header">
-        <span class="slider-title">Current Battery</span>
-        <span class="slider-val" id="current-val">50%</span>
+  <div class="tabs-viewport">
+    <!-- ==========================================
+         TAB 1: CHARGING SCHEDULE[span_1](start_span)[span_1](end_span)
+         ========================================== -->
+    <div id="tab-schedule" class="tab-pane active">
+      <!-- Charging Location -->
+      <label style="margin-top: 0;">Charging Location</label>
+      <div class="btn-group" id="loc-group">
+        <div class="group-indicator green-pill"></div>
+        <button type="button" class="toggle-btn active" id="loc-work" onclick="setLocation('work')">Work</button>
+        <button type="button" class="toggle-btn" id="loc-home" onclick="setLocation('home')">Home</button>
       </div>
-      <input type="range" id="current" value="50" min="0" max="100" step="1" oninput="onCurrentChange(this.value)">
-    </div>
-  </div>
 
-  <!-- Target Battery Slider (Default: 80%) -->
-  <div style="margin-top: 12px;">
-    <div class="slider-card">
-      <div class="slider-header">
-        <span class="slider-title">Target Battery</span>
-        <span class="slider-val" id="target-val">80%</span>
+      <!-- Calculation Mode -->
+      <label>Calculation Mode</label>
+      <div class="btn-group" id="mode-group">
+        <div class="group-indicator neutral-pill"></div>
+        <button type="button" class="toggle-btn active" id="mode-now" onclick="setMode('now')">Start Now</button>
+        <button type="button" class="toggle-btn" id="mode-departure" onclick="setMode('departure')">Set Departure</button>
       </div>
-      <input type="range" id="target" value="80" min="20" max="90" step="5" oninput="onTargetChange(this.value)">
-    </div>
-  </div>
 
-  <!-- Departure Picker -->
-  <div id="departure-group" style="display: none; margin-top: 12px;">
-    <label for="leave" style="margin-top: 6px;">Departure Time</label>
-    <div class="time-picker-box">
-      <input type="time" id="leave" value="17:00" onchange="calculate()">
-    </div>
-  </div>
-
-  <!-- Results Section -->
-  <div class="result-box">
-    <div class="result-row">
-      <div class="result-label">Gain / Target:</div>
-      <div class="val-large" id="gain">--</div>
-    </div>
-    <div class="result-row">
-      <div class="result-label">Session Duration:</div>
-      <div class="val-large" id="duration">--</div>
-    </div>
-
-    <!-- Start Now Results -->
-    <div id="now-results">
-      <div class="result-row">
-        <div class="result-label">Done Charging At:</div>
-        <div class="val-highlight-green" id="target-time">--</div>
-      </div>
-      <div class="result-row" id="must-leave-row">
-        <div class="result-label">Must Leave By (+45m):</div>
-        <div class="val-highlight-red" id="must-leave-time">--</div>
-      </div>
-    </div>
-
-    <!-- Set Departure Results -->
-    <div id="departure-results" style="display: none;">
-      <div id="work-departure-block">
-        <div class="result-row">
-          <div class="result-label">Earliest Start (45m Grace):</div>
-          <div class="val-highlight-green" id="earliest-start-time">--</div>
-        </div>
-        <div class="result-row">
-          <div class="result-label">Latest Start (Exact Finish):</div>
-          <div class="val-highlight-red" id="latest-start-time">--</div>
+      <!-- Current Battery Slider (Default: 50%) -->
+      <div style="margin-top: 18px;">
+        <div class="slider-card">
+          <div class="slider-header">
+            <span class="slider-title">Current Battery</span>
+            <span class="slider-val" id="current-val">50%</span>
+          </div>
+          <input type="range" id="current" value="50" min="0" max="100" step="1" oninput="onCurrentChange(this.value)">
         </div>
       </div>
-      <div id="home-departure-block" style="display: none;">
+
+      <!-- Target Battery Slider (Default: 80%) -->
+      <div style="margin-top: 12px;">
+        <div class="slider-card">
+          <div class="slider-header">
+            <span class="slider-title">Target Battery</span>
+            <span class="slider-val" id="target-val">80%</span>
+          </div>
+          <input type="range" id="target" value="80" min="20" max="90" step="5" oninput="onTargetChange(this.value)">
+        </div>
+      </div>
+
+      <!-- Departure Picker (Smooth Collapsible) -->
+      <div id="departure-group" class="collapsible">
+        <label for="leave" style="margin-top: 6px;">Departure Time</label>
+        <div class="time-picker-box">
+          <input type="time" id="leave" value="17:00" onchange="calculateSchedule()">
+        </div>
+      </div>
+
+      <!-- Schedule Results Section -->
+      <div class="result-box">
         <div class="result-row">
-          <div class="result-label">Start Charging At:</div>
-          <div class="val-highlight-green" id="home-start-time">--</div>
+          <div class="result-label">Gain / Target:</div>
+          <div class="val-large" id="gain">--</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Session Duration:</div>
+          <div class="val-large" id="duration">--</div>
+        </div>
+
+        <!-- Start Now Results -->
+        <div id="now-results">
+          <div class="result-row">
+            <div class="result-label">Done Charging At:</div>
+            <div class="val-highlight-green" id="target-time">--</div>
+          </div>
+          <div class="result-row" id="must-leave-row">
+            <div class="result-label">Must Leave By (+45m):</div>
+            <div class="val-highlight-red" id="must-leave-time">--</div>
+          </div>
+        </div>
+
+        <!-- Set Departure Results -->
+        <div id="departure-results" style="display: none;">
+          <div id="work-departure-block">
+            <div class="result-row">
+              <div class="result-label">Earliest Start (45m Grace):</div>
+              <div class="val-highlight-green" id="earliest-start-time">--</div>
+            </div>
+            <div class="result-row">
+              <div class="result-label">Latest Start (Exact Finish):</div>
+              <div class="val-highlight-red" id="latest-start-time">--</div>
+            </div>
+          </div>
+          <div id="home-departure-block" style="display: none;">
+            <div class="result-row">
+              <div class="result-label">Start Charging At:</div>
+              <div class="val-highlight-green" id="home-start-time">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 2: COST SAVINGS[span_2](start_span)[span_2](end_span)
+         ========================================== -->
+    <div id="tab-savings" class="tab-pane">
+      <!-- Tesla App Style Visual Summary -->
+      <div class="tesla-stats-card">
+        <div class="stats-header">
+          <div>
+            <div class="stat-label">Saved</div>
+            <div class="stat-value" id="savedHero">$89</div>
+          </div>
+          <div>
+            <div class="stat-label">Total Miles Added</div>
+            <div class="stat-value" id="milesHero">994</div>
+          </div>
+        </div>
+
+        <div class="bars-wrapper">
+          <div class="tick-row" id="evBar"></div>
+          <div class="tick-row" id="gasBar"></div>
+        </div>
+
+        <div class="stats-legend">
+          <div class="legend-item">
+            <span class="dot green" id="evDot"></span>
+            <span>Total Spent <span class="legend-amount" id="spentLegend">$6</span></span>
+          </div>
+          <div class="legend-item">
+            <span class="dot grey"></span>
+            <span>Gas Equivalent <span class="legend-amount" id="gasLegend">$94</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parameter Inputs -->
+      <div class="inputs-grid">
+        <div class="input-box">
+          <label for="kwh">Energy Charged (kWh)</label>
+          <input type="number" class="num-input" id="kwh" value="298.2" step="any" min="0" oninput="calculateSavings()">
+        </div>
+
+        <div class="input-box">
+          <label for="chargeCost">Charging Cost ($)</label>
+          <input type="number" class="num-input" id="chargeCost" value="6.00" step="any" min="0" oninput="calculateSavings()">
+        </div>
+
+        <div class="input-box">
+          <label for="efficiency">Efficiency (Wh/mi)</label>
+          <input type="number" class="num-input" id="efficiency" value="300" step="any" min="1" oninput="calculateSavings()">
+        </div>
+
+        <div class="input-box">
+          <label for="mpg">Gas Efficiency (MPG)</label>
+          <input type="number" class="num-input" id="mpg" value="40" step="any" min="1" oninput="calculateSavings()">
+        </div>
+
+        <div class="input-box full-width">
+          <label for="gasPrice">Gas Price ($/gallon)</label>
+          <input type="number" class="num-input" id="gasPrice" value="3.80" step="any" min="0" oninput="calculateSavings()">
+        </div>
+      </div>
+
+      <!-- Detailed Savings Breakdown -->
+      <div class="result-box" style="margin-top: 20px;">
+        <div class="result-row">
+          <div class="result-label">Exact Savings:</div>
+          <div class="val-highlight-green" id="exactSavings">$0.00</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Equivalent Gas Needed:</div>
+          <div class="val-large" id="gasNeeded">0.00 gal</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Tesla Cost per Mile:</div>
+          <div class="val-large" id="evCpm">$0.000 / mi</div>
+        </div>
+        <div class="result-row">
+          <div class="result-label">Gas Cost per Mile:</div>
+          <div class="val-large" id="gasCpm">$0.000 / mi</div>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 
 <script>
+  /* --- TAB SWITCHING WITH ANIMATION --- */
+  function switchTab(tab) {
+    const isSchedule = tab === 'schedule';
+    document.getElementById('tab-nav').classList.toggle('savings-active', !isSchedule);
+    document.getElementById('tab-btn-schedule').classList.toggle('active', isSchedule);
+    document.getElementById('tab-btn-savings').classList.toggle('active', !isSchedule);
+    document.getElementById('tab-schedule').classList.toggle('active', isSchedule);
+    document.getElementById('tab-savings').classList.toggle('active', !isSchedule);
+    document.getElementById('header-accent').textContent = isSchedule ? 'SCHEDULE TOOL' : 'SAVINGS TOOL';
+  }
+
+  /* --- TAB 1: CHARGING SCHEDULE LOGIC[span_3](start_span)[span_3](end_span) --- */
   let locationType = 'work';
   let mode = 'now';
   const MAX_WORK_HOURS = 4;
@@ -387,27 +767,29 @@
 
   function setLocation(loc) {
     locationType = loc;
+    document.getElementById('loc-group').classList.toggle('right-active', loc === 'home');
     document.getElementById('loc-work').classList.toggle('active', loc === 'work');
     document.getElementById('loc-home').classList.toggle('active', loc === 'home');
-    calculate();
+    calculateSchedule();
   }
 
   function setMode(newMode) {
     mode = newMode;
-    document.getElementById('mode-departure').classList.toggle('active', mode === 'departure');
+    document.getElementById('mode-group').classList.toggle('right-active', mode === 'departure');
     document.getElementById('mode-now').classList.toggle('active', mode === 'now');
-    document.getElementById('departure-group').style.display = mode === 'departure' ? 'block' : 'none';
-    calculate();
+    document.getElementById('mode-departure').classList.toggle('active', mode === 'departure');
+    document.getElementById('departure-group').classList.toggle('open', mode === 'departure');
+    calculateSchedule();
   }
 
   function onCurrentChange(val) {
     document.getElementById('current-val').textContent = `${val}%`;
-    calculate();
+    calculateSchedule();
   }
 
   function onTargetChange(val) {
     document.getElementById('target-val').textContent = `${val}%`;
-    calculate();
+    calculateSchedule();
   }
 
   function formatTime(dateObj) {
@@ -419,7 +801,7 @@
     return `${hours}:${formattedM} ${ampm}`;
   }
 
-  function calculate() {
+  function calculateSchedule() {
     const current = parseFloat(document.getElementById('current').value) || 0;
     const target = parseFloat(document.getElementById('target').value) || 0;
     const leaveVal = document.getElementById('leave').value;
@@ -499,7 +881,98 @@
     }
   }
 
-  calculate();
+  /* --- TAB 2: COST SAVINGS LOGIC --- */
+  const TOTAL_TICKS = 48;
+  const evBarEl = document.getElementById('evBar');
+  const gasBarEl = document.getElementById('gasBar');
+
+  for (let i = 0; i < TOTAL_TICKS; i++) {
+    const evTick = document.createElement('div');
+    evTick.className = 'tick';
+    evBarEl.appendChild(evTick);
+
+    const gasTick = document.createElement('div');
+    gasTick.className = 'tick';
+    gasBarEl.appendChild(gasTick);
+  }
+
+  function formatRoundedCurrency(val) {
+    const rounded = Math.round(val);
+    if (rounded < 0) {
+      return '-$' + Math.abs(rounded).toLocaleString();
+    }
+    return '$' + rounded.toLocaleString();
+  }
+
+  function calculateSavings() {
+    const kwh = parseFloat(document.getElementById('kwh').value) || 0;
+    const chargeCost = parseFloat(document.getElementById('chargeCost').value) || 0;
+    const efficiency = parseFloat(document.getElementById('efficiency').value) || 1;
+    const mpg = parseFloat(document.getElementById('mpg').value) || 1;
+    const gasPrice = parseFloat(document.getElementById('gasPrice').value) || 0;
+
+    const milesDriven = (kwh * 1000) / efficiency;
+    const gasNeeded = milesDriven / mpg;
+    const equivalentGasCost = gasNeeded * gasPrice;
+    const totalSavings = equivalentGasCost - chargeCost;
+
+    const evCpm = milesDriven > 0 ? chargeCost / milesDriven : 0;
+    const gasCpm = milesDriven > 0 ? equivalentGasCost / milesDriven : 0;
+
+    const savedHeroEl = document.getElementById('savedHero');
+    savedHeroEl.innerText = formatRoundedCurrency(totalSavings);
+    savedHeroEl.style.color = totalSavings >= 0 ? 'var(--text-main)' : 'var(--accent-red)';
+
+    document.getElementById('milesHero').innerText = Math.round(milesDriven).toLocaleString();
+    document.getElementById('spentLegend').innerText = '$' + Math.round(chargeCost).toLocaleString();
+    document.getElementById('gasLegend').innerText = '$' + Math.round(equivalentGasCost).toLocaleString();
+
+    const exactSavingsEl = document.getElementById('exactSavings');
+    exactSavingsEl.innerText = (totalSavings >= 0 ? '$' : '-$') + Math.abs(totalSavings).toFixed(2);
+    exactSavingsEl.className = totalSavings >= 0 ? 'val-highlight-green' : 'val-highlight-red';
+
+    document.getElementById('gasNeeded').innerText = gasNeeded.toFixed(2) + ' gal';
+    document.getElementById('evCpm').innerText = '$' + evCpm.toFixed(3) + ' / mi';
+    document.getElementById('gasCpm').innerText = '$' + gasCpm.toFixed(3) + ' / mi';
+
+    const maxCost = Math.max(chargeCost, equivalentGasCost);
+    let evActiveTicks = 0;
+    let gasActiveTicks = 0;
+
+    if (maxCost > 0) {
+      evActiveTicks = Math.round((chargeCost / maxCost) * TOTAL_TICKS);
+      gasActiveTicks = Math.round((equivalentGasCost / maxCost) * TOTAL_TICKS);
+
+      if (chargeCost > 0 && evActiveTicks === 0) evActiveTicks = 1;
+      if (equivalentGasCost > 0 && gasActiveTicks === 0) gasActiveTicks = 1;
+    }
+
+    const isMoreExpensive = chargeCost > equivalentGasCost;
+    const evDot = document.getElementById('evDot');
+    evDot.style.backgroundColor = isMoreExpensive ? 'var(--accent-red)' : 'var(--accent-green)';
+    evDot.style.boxShadow = isMoreExpensive ? '0 0 6px var(--accent-red-glow)' : '0 0 6px var(--accent-green-glow)';
+
+    const evTicks = evBarEl.children;
+    const gasTicks = gasBarEl.children;
+
+    for (let i = 0; i < TOTAL_TICKS; i++) {
+      if (i < evActiveTicks) {
+        evTicks[i].className = isMoreExpensive ? 'tick active-danger' : 'tick active-green';
+      } else {
+        evTicks[i].className = 'tick';
+      }
+
+      if (i < gasActiveTicks) {
+        gasTicks[i].className = 'tick active-grey';
+      } else {
+        gasTicks[i].className = 'tick';
+      }
+    }
+  }
+
+  // Initialize both tabs on load
+  calculateSchedule();
+  calculateSavings();
 </script>
 
 </body>
